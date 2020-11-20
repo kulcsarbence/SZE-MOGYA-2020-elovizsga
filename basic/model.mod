@@ -1,4 +1,4 @@
-# Sets and parameters
+# Sets and parameters - yes
 param nRows;
 param cashierCount;
 param cashierLength;

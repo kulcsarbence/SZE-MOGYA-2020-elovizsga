@@ -17,7 +17,7 @@ param buys{CustomerGroups, ProductGroups} binary;
 set Rows := 1..nRows;
 set Cashiers := 1..cashierCount;
 
-param M := 17250000;
+param M := 100;
 
 # Variables
 var productInRow{Rows, ProductGroups} binary;
@@ -25,9 +25,12 @@ var lengthOfRow{Rows} >= 0;
 var cashierInRow{Rows, Cashiers} binary;
 var customerBuysPlus{Rows, CustomerGroups} >= 0;
 var isThereSomethingHeWantsToBuy{Rows, CustomerGroups} binary;
-
+var isCashierInRow{Rows} binary;
 
 # Constraints
+
+s.t. calculateIfCashierIsInRow{c in Cashiers, r in Rows}:
+	isCashierInRow[r] >= cashierInRow[r,c];
 
 s.t. calculateIfIsThereSomethingHeWantsToBuy{r in Rows, cg in CustomerGroups, p in ProductGroups}:
 	isThereSomethingHeWantsToBuy[r,cg] >= buys[cg,p] * productInRow[r,p];
@@ -56,9 +59,15 @@ s.t. customerBuysWithGivenProbabilityIfThereIsAProductHeWantedToBuy{r in Rows, c
 s.t. customerBuysWithGivenProbabilityIfThereIsAProductHeWantedToBuySECOND{r in Rows, cg in CustomerGroups}:
 	customerBuysPlus[r,cg] <= sum{p2 in ProductGroups: buys[cg,p2]==0} productInRow[r,p2]*averagePrice[p2]*probabilityToBuy[cg] + M*(1-isThereSomethingHeWantsToBuy[r,cg]);
 
+s.t. ifThereIsACashierThenOnThatRowThisHasNoEffect{r in Rows, cg in CustomerGroups}:
+	customerBuysPlus[r,cg] >= 0-M*(1-isCashierInRow[r]);
+
+s.t. ifThereIsACashierThenOnThatRowThisHasNoEffectSECOND{r in Rows, cg in CustomerGroups}:
+	customerBuysPlus[r,cg] <= 0+M*(1-isCashierInRow[r]);
+
 # Objective function
 
-minimize OverallPlusBuys: 
+maximize OverallPlusBuys: 
 	sum{cg in CustomerGroups, r in Rows} customerBuysPlus[r,cg]*count[cg];
 
 # Print out
